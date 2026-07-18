@@ -1,7 +1,8 @@
 import json
+from workers import Response
 from calculators import calculate_emi, calculate_dti_ratio, get_financial_verdict
 
-async def fetch(request, env, ctx):
+async def on_fetch(request, env, ctx):
     # Only allow POST API requests
     if request.method != "POST":
         return Response.json({"error": "Method not allowed. Use POST."}, status=405)
@@ -9,7 +10,7 @@ async def fetch(request, env, ctx):
     try:
         # Read customer financial details from incoming JSON payload
         body = await request.json()
-        
+
         income = float(body.get("income", 0))
         existing_emis = float(body.get("existing_emis", 0))
         proposed_loan = float(body.get("proposed_loan", 0))
@@ -39,7 +40,7 @@ async def fetch(request, env, ctx):
         2. Keep your tone empathetic, conversational, respectful, and perfectly aligned with mass-market Indian cash flows.
         3. Explicitly carry out the hard advisory guidance (e.g. explain why going over 50% DTI is dangerous)."""
 
-        # 3. Call Cloudflare's Edge AI network directly (Blazing fast Llama-3 model)
+        # 3. Call Cloudflare's Edge AI network directly
         ai_response = await env.AI.run(
             "@cf/meta/llama-3-8b-instruct",
             {
@@ -64,10 +65,3 @@ async def fetch(request, env, ctx):
 
     except Exception as e:
         return Response.json({"error": str(e)}, status=500)
-
-# ─── ADD THIS HANDLER DICTIONARY AT THE BOTTOM ───
-# This explicitly registers the entry point for the runtime environment
-__all__ = ["worker"]
-worker = {
-    "fetch": fetch
-}
