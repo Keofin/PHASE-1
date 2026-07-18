@@ -1,44 +1,41 @@
-import ollama
-from calculators import calculate_emi, calculate_dti_ratio, get_financial_verdict
+import urllib.request
+import json
 
-def test_run():
-    # 1. Run the math tools manually for a test user
-    income = 40000
-    existing_emis = 15000
-    
-    # Calculate a new loan proposal (₹1.5 Lakhs at 14.5% interest for 2 years)
-    new_emi = calculate_emi(150000, 14.5, 24)
-    dti = calculate_dti_ratio(income, existing_emis, new_emi)
-    verdict = get_financial_verdict(dti)
-    
-    # 2. Package everything into a text block for Llama to read
-    financial_data_context = f"""
-    User Income: ₹{income}
-    Existing EMIs: ₹{existing_emis}
-    New Calculated EMI: ₹{new_emi}
-    Total Debt-to-Income Ratio: {dti}%
-    Our Advisory Rule Verdict: {verdict['verdict']} ({verdict['reason']})
-    """
-    
-    print("🤖 Processing context through your local Llama model...")
-    
-    # 3. Ask your local Llama model to draft the final response text
-    response = ollama.chat(
-        model="llama3.2:3b",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a friendly financial advisor helper. Explain the numbers calmly to an everyday Indian user using no corporate jargon."
-            },
-            {
-                "role": "user",
-                "content": f"{financial_data_context}\n\nCustomer wants a loan for an iPhone. Explain our verdict to them."
-            }
-        ]
-    )
-    
-    print("\n📝 Here is the AI Draft Response:")
-    print(response['message']['content'])
+# Your live production Cloudflare Worker URL
+url = "https://keofin-advisor-api.keofinadvisors.workers.dev"
 
-if __name__ == "__main__":
-    test_run()
+# The exact same customer scenario payload
+data = {
+    "income": 80000,
+    "existing_emis": 15000,
+    "proposed_loan": 500000,
+    "rate": 10.5,
+    "tenure_months": 36,
+    "customer_query": "Can I easily afford this new loan EMI?"
+}
+
+# Encode the request payload safely
+encoded_data = json.dumps(data).encode('utf-8')
+
+# ─── ADD A REAL USER-AGENT HEADER HERE ───
+headers = {
+    'Content-Type': 'application/json',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+}
+
+req = urllib.request.Request(
+    url, 
+    data=encoded_data, 
+    headers=headers,
+    method='POST'
+)
+
+print("Sending test request to Cloudflare Edge AI network...\n")
+
+try:
+    with urllib.request.urlopen(req) as response:
+        result = json.loads(response.read().decode('utf-8'))
+        print("🚀 API RESPONSE RECEIVED SUCCESSFULLY:\n")
+        print(json.dumps(result, indent=4, ensure_ascii=False))
+except Exception as e:
+    print(f"❌ Request failed: {e}")

@@ -19,10 +19,14 @@ class Default(WorkerEntrypoint):
             tenure_months = int(body.get("tenure_months", 1))
             customer_query = body.get("customer_query", "")
 
+            # 1. Run our rock-solid deterministic math formulas
             new_emi = calculate_emi(proposed_loan, rate, tenure_months)
-            dti_ratio = calculate_dti_ratio(income, existing_emis, proposed_new_emi=new_emi)
+            
+            # 💡 FIX: Changed 'proposed_new_emi' parameter matching to just 'new_emi' if that's what your calculator expects
+            dti_ratio = calculate_dti_ratio(income, existing_emis, new_emi)
             verdict_data = get_financial_verdict(dti_ratio)
 
+            # 2. Compile context details for the Cloud AI model
             financial_data_context = f"""
             CUSTOMER FINANCIAL SITUATION:
             - Monthly Income: ₹{income}
@@ -39,6 +43,7 @@ class Default(WorkerEntrypoint):
             2. Keep your tone empathetic, conversational, respectful, and perfectly aligned with mass-market Indian cash flows.
             3. Explicitly carry out the hard advisory guidance (e.g. explain why going over 50% DTI is dangerous)."""
 
+            # 3. Call Cloudflare's Edge AI network directly
             ai_response = await env.AI.run(
                 "@cf/meta/llama-3-8b-instruct",
                 {
@@ -49,6 +54,7 @@ class Default(WorkerEntrypoint):
                 }
             )
 
+            # 4. Return everything back cleanly
             response_payload = {
                 "proposed_emi": new_emi,
                 "dti_ratio": dti_ratio,
