@@ -64,3 +64,10 @@ async def fetch(request, env, ctx):
 
     except Exception as e:
         return Response.json({"error": str(e)}, status=500)
+
+# ─── ADD THIS HANDLER DICTIONARY AT THE BOTTOM ───
+# This explicitly registers the entry point for the runtime environment
+__all__ = ["worker"]
+worker = {
+    "fetch": fetch
+}
