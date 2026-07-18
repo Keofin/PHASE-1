@@ -1,6 +1,7 @@
 name = "keofin-advisor-api"
 main = "src/entry.py"
 compatibility_date = "2026-07-15"
+compatibility_flags = [ "python_workers" ]
 
 [ai]
 binding = "AI"
