@@ -1,5 +1,5 @@
 import json
-from src.calculators import calculate_emi, calculate_dti_ratio, get_financial_verdict
+from calculators import calculate_emi, calculate_dti_ratio, get_financial_verdict
 
 async def fetch(request, env, ctx):
     # Only allow POST API requests
